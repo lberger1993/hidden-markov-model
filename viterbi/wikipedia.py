@@ -2,73 +2,61 @@ def create_observation_object():
     V = [{}]
     for st in states:
         V[0][st] = {"prob": start_p[st] * obs_p[st][obs[0]], "prev": None}
+
     return V
+
+
+def find_max_transitional_probability(V_object):
+    for t in range(1, len(obs)):
+        V_object.append({})
+        for st in states:
+            max_tr_prob = max(V_object[t - 1][prev_st]["prob"] * trans_p[prev_st][st] for prev_st in states)
+            for prev_st in states:
+                if V_object[t - 1][prev_st]["prob"] * trans_p[prev_st][st] == max_tr_prob:
+                    max_prob = max_tr_prob * obs_p[st][obs[t]]
+                    V_object[t][st] = {"prob": max_prob, "prev": prev_st}
+                    break
+
+
+def find_most_probable_state(V,max):
+    """ Get most probable state and its backtrack"""
+    opt = []
+    previous = None
+    for st, data in V[-1].items():
+        if data["prob"] == max:
+            opt.append(st)
+            previous = st
+            break
+    return opt, previous
+
+
+def backtrack_until_first_observation(V,opt_array, previous):
+    for t in range(len(V) - 2, -1, -1):
+        opt_array.insert(0, V[t + 1][previous]["prev"])
+        previous = V[t + 1][previous]["prev"]
+
 
 
 def viterbi(obs, states, start_p, trans_p, obs_p):
     # returns the observation object
     V = create_observation_object()
-
-    for t in range(1, len(obs)):
-        V.append({})
-        for st in states:
-            max_tr_prob = max(V[t - 1][prev_st]["prob"] * trans_p[prev_st][st] for prev_st in states)
-            for prev_st in states:
-                if V[t - 1][prev_st]["prob"] * trans_p[prev_st][st] == max_tr_prob:
-                    max_prob = max_tr_prob * obs_p[st][obs[t]]
-                    V[t][st] = {"prob": max_prob, "prev": prev_st}
-                    break
-
-    for line in dptable(V):
-        print(line)
-    opt = []
-
+    dynamic_programming_table(V)
+    find_max_transitional_probability(V)
     # The highest probability
     max_prob = max(value["prob"] for value in V[-1].values())
-    previous = None
-
-    # Get most probable state and its backtrack
-    for st, data in V[-1].items():
-        if data["prob"] == max_prob:
-            opt.append(st)
-            previous = st
-            break
-
+    opt, previous = find_most_probable_state(V, max_prob)
+    backtrack_until_first_observation(V, opt, previous)
     # Follow the backtrack till the first observation
-    for t in range(len(V) - 2, -1, -1):
-        opt.insert(0, V[t + 1][previous]["prev"])
-        previous = V[t + 1][previous]["prev"]
-    print('The steps of states are ' + ' '.join(opt) + ' with highest probability of %s' % max_prob)
+    print(' & %s' % max_prob + ' & ' + ''.join(opt) + ' \\ \hline')
 
 
-def dptable(V):
+def dynamic_programming_table(V):
     # Print a table of steps from dictionary
     yield " ".join(("%12d" % i) for i in range(len(V)))
     for state in V[0]:
         yield "%.7s: " % state + " ".join("%.7s" % ("%f" % v[state]["prob"]) for v in V)
 
 
-#input = "I wish you merry christmas" # 2.0416269043143716e-05
-#input = "Happy Christmas to you and all your family" #3.072065788190409e-13
-#input = "Let this Christmas time be full of joy and love" #4.890584237655257e-15
-#input = "May beautiful moments and happy memories surround you with joy this Christmas" # 1.980887251794346e-18
-#input = "Have a merry Christmas full of cheer and happiness" # 3.610924278634837e-13
-input = "christmas greetings" #0.00037930511298740706
-# input = "May God bless you this Christmas" #4.80437723424023e-09
-# input = "Have a merry Christmas" #7.332501825719629e-06
-# input = "I wish you a Christmas overflowing with love and laughter" #2.3012915829170033e-13
-# input = "May all your joyful Christmas dreams come true.  I love you" #0
-# input = "My love, you bring me so much joy. I wish you the best Christmas ever this year" #0
-# input = "My one christmas wish is always to be with you" #1.7201133771708957e-18
-# #input = "I wish you great Christmas time full of love and happiness" #6.610181248987484e-15
-# #input = "My best wishes for Christmas" #3.711252083960961e-08
-#
-# # A N S S S P V with highest prob 3.50 e-12
-
-# input = "Have a joyful Christmas full of love"
-# V S A N A S N with highest prob 1.42 e-10
-
-obs = input.lower().split(" ")
 states = ('A', 'N', 'P', 'S', 'V')
 start_p = {'A': 0.2, 'N': 0.2, 'P': 0.2, 'S': 0.2, 'V': 0.2}
 trans_p = {
@@ -103,26 +91,20 @@ trans_p = {
         'S': 0.3333333333,
         'V': 0}}
 
-obs_p = {
-    'A': {'merry': 0.1764705882, 'happy': 0.1176470588, 'full': 0.1764705882, 'beautiful': 0.05882352941,
-          'best': 0.2352941176, 'overflowing': 0.05882352941, 'joyful': 0.05882352941, 'true': 0.05882352941,
-          'great': 0.05882352941},
-    'N': {'christmas': 0.3846153846, 'family': 0.02564102564, 'joy': 0.1025641026, 'love': 0.1025641026,
-          'moments': 0.02564102564, 'memories': 0.02564102564, 'cheer': 0.05128205128, 'happiness': 0.05128205128,
-          'greetings': 0.02564102564, 'god': 0.02564102564, 'laughter': 0.02564102564, 'dreams': 0.02564102564,
-          'year': 0.02564102564, 'wish': 0.02564102564, 'time': 0.05128205128, 'wishes': 0.02564102564},
-    'P': {'i': 0.3333333333, 'you': 0.6666666667},
-    'S': {'a': 0.09090909091, 'to': 0.04545454545, 'and': 0.1363636364, 'all': 0.04545454545, 'your': 0.04545454545,
-          'this': 0.09090909091, 'be': 0.04545454545, 'of': 0.1136363636, 'may': 0.06818181818, 'with': 0.06818181818,
-          'for': 0.04545454545, 'my': 0.06818181818, 'me': 0.02272727273, 'so': 0.02272727273, 'much': 0.02272727273,
-          'ever': 0.02272727273, 'only': 0, 'is': 0.02272727273, 'always': 0.02272727273, 'the': 0.04545454545,
-          'one': 0.02272727273},
-    'V': {'wish': 0.3333333333, 'let': 0.08333333333, 'surround': 0.08333333333, 'have': 0.1666666667,
-          'bless': 0.08333333333, 'come': 0.08333333333, 'love': 0.08333333333, 'bring': 0.08333333333}}
+obs_p = {'A': {'merry': 0.1875, 'happy': 0.125, 'full': 0.1875, 'beautiful': 0.0625, 'best': 0.25, 'overflowing': 0.0625, 'joyful': 0.0625, 'true': 0.0, 'great': 0.0625}, 'N': {'christmas': 0.3611111111111111, 'family': 0.027777777777777776, 'joy': 0.05555555555555555, 'love': 0.1111111111111111, 'moments': 0.027777777777777776, 'memories': 0.027777777777777776, 'cheer': 0.05555555555555555, 'happiness': 0.027777777777777776, 'greetings': 0.027777777777777776, 'god': 0.027777777777777776, 'laughter': 0.0, 'dreams': 0.027777777777777776, 'year': 0.0, 'wish': 0.1388888888888889, 'time': 0.05555555555555555, 'wishes': 0.027777777777777776}, 'P': {'i': 0.35714285714285715, 'you': 0.6428571428571429}, 'S': {'a': 0.08333333333333333, 'to': 0.041666666666666664, 'and': 0.125, 'all': 0.041666666666666664, 'your': 0.041666666666666664, 'this': 0.08333333333333333, 'be': 0.041666666666666664, 'of': 0.10416666666666667, 'may': 0.0625, 'with': 0.0625, 'for': 0.041666666666666664, 'my': 0.0625, 'me': 0.020833333333333332, 'so': 0.020833333333333332, 'much': 0.020833333333333332, 'ever': 0.020833333333333332, 'only': 0.0, 'is': 0.020833333333333332, 'always': 0.020833333333333332, 'the': 0.0625, 'one': 0.020833333333333332}, 'V': {'wish': 0.3125, 'let': 0.0625, 'surround': 0.0625, 'have': 0.125, 'bless': 0.0625, 'come': 0.0625, 'love': 0.25, 'bring': 0.0625}}
 
-for ob in obs:
-    for state in states:
-        if not ob in obs_p[state]:
-            obs_p[state][ob] = 0
+def remove_empty(obs):
+    for ob in obs:
+        for state in states:
+            if not ob in obs_p[state]:
+                obs_p[state][ob] = 0
 
-viterbi(obs, states, start_p, trans_p, obs_p)
+with open("observations.txt") as f:
+    content = f.readlines()
+    full_content = []
+    for line in content:
+        line = line.replace('\n', '').lower()
+        obs = line.split(' ')
+        remove_empty(obs)
+        viterbi(obs, states, start_p, trans_p, obs_p)
+        final_string = str(obs) + " & 0 &  0.209\\ \hline"
