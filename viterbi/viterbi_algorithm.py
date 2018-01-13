@@ -1,3 +1,6 @@
+from string import punctuation
+
+
 def create_observation_object():
     V = [{}]
     for st in states:
@@ -58,7 +61,7 @@ def dynamic_programming_table(V):
 
 
 states = ('A', 'N', 'P', 'S', 'V')
-start_p = {'A': 0.2, 'N': 0.2, 'P': 0.2, 'S': 0.2, 'V': 0.2}
+start_p = {'A': 1/15, 'N': 1/15, 'P': 3/15, 'S':4/15, 'V': 6/15}
 trans_p = {
     'A': {
         'A': 0,
@@ -106,6 +109,7 @@ with open("observations.txt") as f:
     full_content = []
     for line in content:
         line = line.replace('\n', '').lower()
+
         obs = line.split(' ')
         remove_empty(obs)
         viterbi(obs, states, start_p, trans_p, obs_p)

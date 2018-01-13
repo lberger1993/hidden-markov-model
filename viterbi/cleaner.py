@@ -15,6 +15,7 @@ with open("observations.txt") as f:
     full_content = []
     for line in content:
         line = line.replace('\n', '').lower()
+
         full_content.append(line.split(' '))
 
 
